@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Guía de Arduino</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:       #050a0e;
+      --surface:  #080f14;
+      --card:     #0c1820;
+      --border:   #0d2233;
+      --accent:   #00d4ff;
+      --accent2:  #00ff9d;
+      --accent3:  #ff6b35;
+      --text:     #d0e8f2;
+      --muted:    #4a7a96;
+      --glow:     rgba(0,212,255,0.15);
+      --glow2:    rgba(0,255,157,0.12);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Rajdhani', sans-serif;
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    /* CIRCUIT GRID BACKGROUND */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* GLOW ORB */
+    body::after {
+      content: '';
+      position: fixed;
+      width: 800px;
+      height: 800px;
+      background: radial-gradient(circle, rgba(0,212,255,0.06) 0%, transparent 65%);
+      top: -200px;
+      left: -200px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ─── BOTÓN REGRESAR ─── */
+    .btn-regresar {
+      position: fixed;
+      top: 1.25rem;
+      left: 1.25rem;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(8,15,20,0.85);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 0.55rem 1.2rem;
+      border-radius: 4px;
+      cursor: pointer;
+      text-decoration: none;
+      letter-spacing: 0.05em;
+      backdrop-filter: blur(12px);
+      transition: all 0.25s;
+      animation: fadeIn 0.5s ease both;
+      clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+    }
+    .btn-regresar:hover {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #000;
+      box-shadow: 0 0 20px rgba(0,212,255,0.4);
+      transform: translateX(-3px);
+    }
+    .btn-regresar svg { width: 15px; height: 15px; transition: transform 0.2s; }
+    .btn-regresar:hover svg { transform: translateX(-3px); }
+
+    /* ─── HERO ─── */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 6rem 2rem 4rem;
+      z-index: 1;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      color: var(--accent);
+      font-size: 0.7rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      margin-bottom: 2rem;
+      animation: fadeDown 0.5s ease both;
+    }
+    .hero-eyebrow::before,
+    .hero-eyebrow::after {
+      content: '';
+      display: block;
+      width: 40px;
+      height: 1px;
+      background: var(--accent);
+      opacity: 0.5;
+    }
+
+    /* ARDUINO BOARD SVG */
+    .board-wrap {
+      position: relative;
+      margin-bottom: 2.5rem;
+      animation: fadeDown 0.5s 0.1s ease both;
+    }
+    .board-glow {
+      position: absolute;
+      inset: -30px;
+      background: radial-gradient(circle, rgba(0,212,255,0.2) 0%, transparent 70%);
+      pointer-events: none;
+      animation: pulse 3s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; transform: scale(1); }
+      50%       { opacity: 1;   transform: scale(1.08); }
+    }
+
+    .arduino-board {
+      width: 200px;
+      height: 130px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero h1 {
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(2.5rem, 7vw, 5.5rem);
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      line-height: 1;
+      margin-bottom: 1rem;
+      animation: fadeDown 0.5s 0.2s ease both;
+    }
+    .hero h1 .ard { color: var(--accent); text-shadow: 0 0 30px rgba(0,212,255,0.5); }
+    .hero h1 .uino { color: var(--accent2); text-shadow: 0 0 30px rgba(0,255,157,0.4); }
+
+    .hero p {
+      max-width: 520px;
+      color: var(--muted);
+      font-size: 1.05rem;
+      font-weight: 400;
+      animation: fadeDown 0.5s 0.3s ease both;
+      line-height: 1.8;
+    }
+
+    .hero-tags {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 1.5rem;
+      animation: fadeDown 0.5s 0.4s ease both;
+    }
+    .tag {
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.3rem 0.85rem;
+      border-radius: 2px;
+      border: 1px solid;
+    }
+    .tag-blue  { border-color: rgba(0,212,255,0.4);  color: var(--accent);  background: rgba(0,212,255,0.07); }
+    .tag-green { border-color: rgba(0,255,157,0.4);  color: var(--accent2); background: rgba(0,255,157,0.07); }
+    .tag-orng  { border-color: rgba(255,107,53,0.4); color: var(--accent3); background: rgba(255,107,53,0.07); }
+
+    .scroll-hint {
+      position: absolute;
+      bottom: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--muted);
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      animation: fadeDown 0.5s 0.6s ease both;
+    }
+    .scroll-arrow {
+      width: 20px; height: 20px;
+      border-right: 1.5px solid var(--accent);
+      border-bottom: 1.5px solid var(--accent);
+      transform: rotate(45deg);
+      animation: bounce 1.5s infinite;
+    }
+
+    /* ─── MAIN ─── */
+    main {
+      position: relative;
+      z-index: 1;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem 2rem 8rem;
+    }
+
+    /* ─── SECTION ─── */
+    .section { margin-bottom: 5rem; }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
+    .sec-num {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      color: var(--accent);
+      background: rgba(0,212,255,0.08);
+      border: 1px solid rgba(0,212,255,0.2);
+      padding: 0.3rem 0.7rem;
+      white-space: nowrap;
+    }
+    .section h2 {
+      font-family: 'Orbitron', monospace;
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--text);
+    }
+    .sec-line {
+      flex: 1; height: 1px;
+      background: linear-gradient(90deg, var(--border), transparent);
+    }
+    .section > .lead {
+      color: var(--muted);
+      font-size: 1rem;
+      max-width: 700px;
+      margin-bottom: 1.5rem;
+      line-height: 1.8;
+    }
+
+    /* ─── CARDS ─── */
+    .grid { display: grid; gap: 1.25rem; }
+    .grid-2 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+    .grid-4 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1.5rem;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), transparent);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(0,212,255,0.3);
+      box-shadow: 0 8px 40px rgba(0,212,255,0.08);
+    }
+    .card:hover::before { opacity: 1; }
+
+    .card-icon {
+      width: 42px; height: 42px;
+      border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem;
+      margin-bottom: 1rem;
+      border: 1px solid var(--border);
+    }
+    .card h3 {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+    }
+    .card p { color: var(--muted); font-size: 0.9rem; line-height: 1.7; }
+    .card .spec {
+      margin-top: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .spec-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.3rem;
+    }
+    .spec-key { color: var(--muted); }
+    .spec-val { color: var(--accent2); font-weight: 600; font-family: 'Orbitron', monospace; font-size: 0.7rem; }
+
+    /* BADGE DE TIPO */
+    .board-badge {
+      display: inline-block;
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.6rem;
+      border-radius: 2px;
+      margin-bottom: 0.75rem;
+      font-family: 'Orbitron', monospace;
+    }
+    .bb-uno   { background: rgba(0,212,255,0.1);  color: var(--accent);  border: 1px solid rgba(0,212,255,0.3); }
+    .bb-nano  { background: rgba(0,255,157,0.1);  color: var(--accent2); border: 1px solid rgba(0,255,157,0.3); }
+    .bb-mega  { background: rgba(255,107,53,0.1); color: var(--accent3); border: 1px solid rgba(255,107,53,0.3); }
+    .bb-micro { background: rgba(199,146,234,0.1);color: #c792ea;        border: 1px solid rgba(199,146,234,0.3); }
+    .bb-esp   { background: rgba(255,212,59,0.1); color: #ffd43b;        border: 1px solid rgba(255,212,59,0.3); }
+
+    /* ─── INFO HERO STRIP ─── */
+    .info-strip {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 2rem 2.5rem;
+      display: flex;
+      align-items: center;
+      gap: 2.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 3rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .info-strip::after {
+      content: '';
+      position: absolute;
+      right: -60px; top: -60px;
+      width: 220px; height: 220px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0,255,157,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .strip-logo {
+      font-family: 'Orbitron', monospace;
+      font-size: 3.5rem;
+      font-weight: 900;
+      color: var(--accent);
+      text-shadow: 0 0 40px rgba(0,212,255,0.4);
+      flex-shrink: 0;
+      line-height: 1;
+    }
+    .strip-text h3 {
+      font-family: 'Orbitron', monospace;
+      font-size: 1.1rem;
+      color: var(--accent2);
+      margin-bottom: 0.5rem;
+    }
+    .strip-text p { color: var(--muted); font-size: 0.95rem; line-height: 1.75; max-width: 560px; }
+    .strip-stats {
+      display: flex; gap: 2rem; flex-wrap: wrap; margin-top: 1.25rem;
+    }
+    .sstat { display: flex; flex-direction: column; }
+    .sstat-n {
+      font-family: 'Orbitron', monospace;
+      font-size: 1.3rem; font-weight: 700;
+      color: var(--accent);
+    }
+    .sstat-l { font-size: 0.72rem; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+
+    /* ─── SENSOR PILL ─── */
+    .sensor-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 1rem;
+    }
+    .sensor-pill {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 1.1rem 1.25rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.9rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .sensor-pill:hover {
+      border-color: rgba(0,255,157,0.3);
+      box-shadow: 0 4px 20px rgba(0,255,157,0.06);
+    }
+    .sensor-icon {
+      font-size: 1.4rem;
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+    }
+    .sensor-info h4 {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--accent2);
+      margin-bottom: 0.25rem;
+    }
+    .sensor-info p { font-size: 0.82rem; color: var(--muted); line-height: 1.5; }
+
+    /* ─── HARDWARE TABLE ─── */
+    .hw-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    .hw-table thead tr {
+      border-bottom: 1px solid rgba(0,212,255,0.2);
+    }
+    .hw-table th {
+      padding: 0.85rem 1rem;
+      text-align: left;
+      font-family: 'Orbitron', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 400;
+    }
+    .hw-table td {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+      vertical-align: top;
+    }
+    .hw-table tr:last-child td { border-bottom: none; }
+    .hw-table tr:hover td { background: rgba(0,212,255,0.03); }
+    .hw-name { color: var(--text) !important; font-weight: 600; }
+    .hw-cat {
+      display: inline-block;
+      font-size: 0.65rem;
+      font-family: 'Orbitron', monospace;
+      letter-spacing: 0.08em;
+      padding: 0.15rem 0.5rem;
+      border-radius: 2px;
+      text-transform: uppercase;
+    }
+    .cat-display  { background: rgba(0,212,255,0.1);  color: var(--accent);  border: 1px solid rgba(0,212,255,0.2); }
+    .cat-motor    { background: rgba(255,107,53,0.1); color: var(--accent3); border: 1px solid rgba(255,107,53,0.2); }
+    .cat-comm     { background: rgba(0,255,157,0.1);  color: var(--accent2); border: 1px solid rgba(0,255,157,0.2); }
+    .cat-power    { background: rgba(255,212,59,0.1); color: #ffd43b;        border: 1px solid rgba(255,212,59,0.2); }
+    .cat-storage  { background: rgba(199,146,234,0.1);color: #c792ea;        border: 1px solid rgba(199,146,234,0.2); }
+    .cat-input    { background: rgba(100,200,100,0.1);color: #7dff7d;        border: 1px solid rgba(100,200,100,0.2); }
+
+    /* ─── USE CASE BOXES ─── */
+    .usecase-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 1rem;
+    }
+    .usecase {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 1.5rem 1.25rem;
+      text-align: center;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .usecase:hover {
+      transform: translateY(-3px);
+      border-color: rgba(0,212,255,0.3);
+    }
+    .usecase .uc-icon { font-size: 2rem; margin-bottom: 0.75rem; }
+    .usecase h4 {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      color: var(--text);
+      margin-bottom: 0.4rem;
+    }
+    .usecase p { font-size: 0.8rem; color: var(--muted); line-height: 1.5; }
+
+    /* ─── FOOTER ─── */
+    footer {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 2.5rem 2rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+      border-top: 1px solid var(--border);
+      font-family: 'Rajdhani', sans-serif;
+      letter-spacing: 0.05em;
+    }
+
+    /* ─── ANIMATIONS ─── */
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; } to { opacity: 1; }
+    }
+    @keyframes bounce {
+      0%, 100% { transform: rotate(45deg) translateY(0); }
+      50%       { transform: rotate(45deg) translateY(5px); }
+    }
+
+    /* ─── SCROLLBAR ─── */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<!-- BOTÓN REGRESAR -->
+<a href="index.html" class="btn-regresar">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="15 18 9 12 15 6"/>
+  </svg>
+  Regresar
+</a>
+
+<!-- ══ HERO ══ -->
+<section class="hero">
+  <div class="hero-eyebrow">Guía de Electrónica</div>
+
+  <!-- Arduino board SVG ilustrado -->
+  <div class="board-wrap">
+    <div class="board-glow"></div>
+    <svg class="arduino-board" viewBox="0 0 200 130" xmlns="http://www.w3.org/2000/svg">
+      <!-- PCB body -->
+      <rect x="10" y="10" width="180" height="110" rx="8" fill="#00628b" stroke="#0088b8" stroke-width="1.5"/>
+      <!-- PCB texture lines -->
+      <line x1="20" y1="40" x2="180" y2="40" stroke="#0088b8" stroke-width="0.5" opacity="0.4"/>
+      <line x1="20" y1="60" x2="180" y2="60" stroke="#0088b8" stroke-width="0.5" opacity="0.4"/>
+      <line x1="20" y1="80" x2="180" y2="80" stroke="#0088b8" stroke-width="0.5" opacity="0.4"/>
+      <line x1="20" y1="100" x2="180" y2="100" stroke="#0088b8" stroke-width="0.5" opacity="0.4"/>
+      <!-- Mounting holes -->
+      <circle cx="22" cy="22" r="4" fill="none" stroke="#004a6b" stroke-width="1.5"/>
+      <circle cx="178" cy="22" r="4" fill="none" stroke="#004a6b" stroke-width="1.5"/>
+      <circle cx="22" cy="108" r="4" fill="none" stroke="#004a6b" stroke-width="1.5"/>
+      <!-- USB connector -->
+      <rect x="10" y="52" width="12" height="26" rx="2" fill="#888" stroke="#aaa" stroke-width="1"/>
+      <rect x="12" y="55" width="8" height="20" rx="1" fill="#555"/>
+      <!-- ATmega chip -->
+      <rect x="80" y="45" width="40" height="40" rx="3" fill="#1a1a1a" stroke="#333" stroke-width="1"/>
+      <text x="100" y="69" text-anchor="middle" fill="#00d4ff" font-size="5" font-family="monospace">ATmega</text>
+      <text x="100" y="76" text-anchor="middle" fill="#00d4ff" font-size="4" font-family="monospace">328P</text>
+      <!-- Pin headers top -->
+      <rect x="35" y="12" width="130" height="10" rx="2" fill="#111" stroke="#333" stroke-width="1"/>
+      <!-- Pin dots top -->
+      <circle cx="42" cy="17" r="2" fill="#00d4ff" opacity="0.8"/>
+      <circle cx="52" cy="17" r="2" fill="#00d4ff" opacity="0.8"/>
+      <circle cx="62" cy="17" r="2" fill="#00d4ff" opacity="0.8"/>
+      <circle cx="72" cy="17" r="2" fill="#00d4ff" opacity="0.8"/>
+      <circle cx="82" cy="17" r="2" fill="#00ff9d" opacity="0.8"/>
+      <circle cx="92" cy="17" r="2" fill="#00ff9d" opacity="0.8"/>
+      <circle cx="102" cy="17" r="2" fill="#00ff9d" opacity="0.8"/>
+      <circle cx="112" cy="17" r="2" fill="#ff6b35" opacity="0.8"/>
+      <circle cx="122" cy="17" r="2" fill="#ff6b35" opacity="0.8"/>
+      <circle cx="132" cy="17" r="2" fill="#ff6b35" opacity="0.8"/>
+      <circle cx="152" cy="17" r="2" fill="#ffd43b" opacity="0.8"/>
+      <circle cx="162" cy="17" r="2" fill="#ffd43b" opacity="0.8"/>
+      <!-- Pin headers bottom -->
+      <rect x="35" y="108" width="130" height="10" rx="2" fill="#111" stroke="#333" stroke-width="1"/>
+      <circle cx="45" cy="113" r="2" fill="#00d4ff" opacity="0.8"/>
+      <circle cx="57" cy="113" r="2" fill="#00d4ff" opacity="0.8"/>
+      <circle cx="69" cy="113" r="2" fill="#00ff9d" opacity="0.8"/>
+      <circle cx="81" cy="113" r="2" fill="#00ff9d" opacity="0.8"/>
+      <circle cx="93" cy="113" r="2" fill="#ff6b35" opacity="0.8"/>
+      <circle cx="105" cy="113" r="2" fill="#ff6b35" opacity="0.8"/>
+      <circle cx="117" cy="113" r="2" fill="#ffd43b" opacity="0.8"/>
+      <circle cx="129" cy="113" r="2" fill="#ffd43b" opacity="0.8"/>
+      <circle cx="141" cy="113" r="2" fill="#00d4ff" opacity="0.8"/>
+      <circle cx="153" cy="113" r="2" fill="#00d4ff" opacity="0.8"/>
+      <!-- LEDs -->
+      <circle cx="155" cy="48" r="4" fill="#00ff00" opacity="0.9">
+        <animate attributeName="opacity" values="0.9;0.3;0.9" dur="1.5s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="165" cy="48" r="4" fill="#ff9900" opacity="0.7">
+        <animate attributeName="opacity" values="0.7;0.2;0.7" dur="2s" repeatCount="indefinite"/>
+      </circle>
+      <!-- Crystal oscillator -->
+      <rect x="50" y="55" width="16" height="8" rx="2" fill="#c8a200" stroke="#ffcc00" stroke-width="0.8"/>
+      <text x="58" y="61" text-anchor="middle" fill="#000" font-size="3.5" font-family="monospace">16MHz</text>
+      <!-- Power jack -->
+      <circle cx="178" cy="90" r="8" fill="#222" stroke="#444" stroke-width="1.5"/>
+      <circle cx="178" cy="90" r="4" fill="#111"/>
+      <!-- Arduino text -->
+      <text x="100" y="100" text-anchor="middle" fill="rgba(255,255,255,0.15)" font-size="8" font-family="Arial" font-weight="bold">ARDUINO</text>
+    </svg>
+  </div>
+
+  <h1><span class="ard">ARD</span><span class="uino">UINO</span></h1>
+  <p>Plataforma de prototipado electrónico de código abierto. Combina hardware y software para crear proyectos interactivos con el mundo físico.</p>
+
+  <div class="hero-tags">
+    <span class="tag tag-blue">Open Source</span>
+    <span class="tag tag-green">Microcontrolador</span>
+    <span class="tag tag-orng">Prototipado</span>
+    <span class="tag tag-blue">C / C++</span>
+    <span class="tag tag-green">IoT</span>
+  </div>
+
+  <div class="scroll-hint">
+    Explorar
+    <div class="scroll-arrow"></div>
+  </div>
+</section>
+
+<!-- ══ MAIN ══ -->
+<main>
+
+  <!-- INFO GENERAL -->
+  <div class="info-strip">
+    <div class="strip-logo">{ }</div>
+    <div class="strip-text">
+      <h3>¿Qué es Arduino?</h3>
+      <p>Arduino es una plataforma de electrónica de código abierto basada en hardware y software fácil de usar. Fue creada en 2005 en el Instituto de Diseño Interactivo de Ivrea, Italia. Permite a estudiantes, artistas, diseñadores y aficionados crear objetos o entornos interactivos leyendo entradas (sensores, botones) y convirtiéndolas en salidas (motores, LEDs, pantallas).</p>
+      <div class="strip-stats">
+        <div class="sstat"><span class="sstat-n">2005</span><span class="sstat-l">Año de creación</span></div>
+        <div class="sstat"><span class="sstat-n">10M+</span><span class="sstat-l">Unidades vendidas</span></div>
+        <div class="sstat"><span class="sstat-n">C/C++</span><span class="sstat-l">Lenguaje base</span></div>
+        <div class="sstat"><span class="sstat-n">Free</span><span class="sstat-l">Software & IDE</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN 1: USOS BÁSICOS -->
+  <div class="section">
+    <div class="section-header">
+      <span class="sec-num">01</span>
+      <h2>Usos Básicos</h2>
+      <div class="sec-line"></div>
+    </div>
+    <p class="lead">Arduino se utiliza en una gran variedad de proyectos, desde los más simples hasta sistemas complejos de automatización e IoT.</p>
+
+    <div class="usecase-grid">
+      <div class="usecase">
+        <div class="uc-icon">💡</div>
+        <h4>Control de LEDs</h4>
+        <p>Encender, apagar y hacer parpadear luces con patrones personalizados.</p>
+      </div>
+      <div class="usecase">
+        <div class="uc-icon">🌡️</div>
+        <h4>Monitoreo Ambiental</h4>
+        <p>Leer temperatura, humedad, presión y calidad del aire en tiempo real.</p>
+      </div>
+      <div class="usecase">
+        <div class="uc-icon">🤖</div>
+        <h4>Robótica</h4>
+        <p>Controlar servomotores y motores DC para brazos robóticos y vehículos.</p>
+      </div>
+      <div class="usecase">
+        <div class="uc-icon">📡</div>
+        <h4>Comunicación IoT</h4>
+        <p>Conectar dispositivos a internet vía WiFi, Bluetooth o RF.</p>
+      </div>
+      <div class="usecase">
+        <div class="uc-icon">🔐</div>
+        <h4>Seguridad</h4>
+        <p>Sistemas de alarma, lectores RFID y reconocimiento de huellas.</p>
+      </div>
+      <div class="usecase">
+        <div class="uc-icon">🎵</div>
+        <h4>Audio y Música</h4>
+        <p>Sintetizadores, instrumentos MIDI y efectos de sonido personalizados.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN 2: TIPOS DE ARDUINO -->
+  <div class="section">
+    <div class="section-header">
+      <span class="sec-num">02</span>
+      <h2>Tipos de Arduino</h2>
+      <div class="sec-line"></div>
+    </div>
+    <p class="lead">Existe una amplia gama de placas Arduino, cada una diseñada para distintos tipos de proyectos según potencia, tamaño y conectividad.</p>
+
+    <div class="grid grid-2">
+
+      <div class="card">
+        <span class="board-badge bb-uno">Principiante</span>
+        <div class="card-icon" style="background:rgba(0,212,255,0.08)">🔵</div>
+        <h3>Arduino UNO</h3>
+        <p>La placa más popular y recomendada para comenzar. Robusta, con amplia documentación y gran comunidad de soporte.</p>
+        <div class="spec">
+          <div class="spec-row"><span class="spec-key">Microcontrolador</span><span class="spec-val">ATmega328P</span></div>
+          <div class="spec-row"><span class="spec-key">Velocidad</span><span class="spec-val">16 MHz</span></div>
+          <div class="spec-row"><span class="spec-key">Pines digitales</span><span class="spec-val">14 (6 PWM)</span></div>
+          <div class="spec-row"><span class="spec-key">Pines analógicos</span><span class="spec-val">6</span></div>
+          <div class="spec-row"><span class="spec-key">Flash</span><span class="spec-val">32 KB</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="board-badge bb-nano">Compacto</span>
+        <div class="card-icon" style="background:rgba(0,255,157,0.08)">🟢</div>
+        <h3>Arduino Nano</h3>
+        <p>Versión compacta del UNO. Ideal para proyectos donde el espacio es limitado. Se conecta directamente a protoboard.</p>
+        <div class="spec">
+          <div class="spec-row"><span class="spec-key">Microcontrolador</span><span class="spec-val">ATmega328</span></div>
+          <div class="spec-row"><span class="spec-key">Velocidad</span><span class="spec-val">16 MHz</span></div>
+          <div class="spec-row"><span class="spec-key">Pines digitales</span><span class="spec-val">22</span></div>
+          <div class="spec-row"><span class="spec-key">Pines analógicos</span><span class="spec-val">8</span></div>
+          <div class="spec-row"><span class="spec-key">Tamaño</span><span class="spec-val">18 × 45 mm</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="board-badge bb-mega">Avanzado</span>
+        <div class="card-icon" style="background:rgba(255,107,53,0.08)">🔴</div>
+        <h3>Arduino Mega 2560</h3>
+        <p>Mayor cantidad de pines y memoria. Perfecto para proyectos complejos que requieren múltiples sensores y actuadores simultáneos.</p>
+        <div class="spec">
+          <div class="spec-row"><span class="spec-key">Microcontrolador</span><span class="spec-val">ATmega2560</span></div>
+          <div class="spec-row"><span class="spec-key">Velocidad</span><span class="spec-val">16 MHz</span></div>
+          <div class="spec-row"><span class="spec-key">Pines digitales</span><span class="spec-val">54 (15 PWM)</span></div>
+          <div class="spec-row"><span class="spec-key">Pines analógicos</span><span class="spec-val">16</span></div>
+          <div class="spec-row"><span class="spec-key">Flash</span><span class="spec-val">256 KB</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="board-badge bb-micro">Wearable</span>
+        <div class="card-icon" style="background:rgba(199,146,234,0.08)">🟣</div>
+        <h3>Arduino Micro</h3>
+        <p>Basado en ATmega32U4 con USB nativo integrado. Puede emular teclado y mouse, ideal para proyectos HID y wearables.</p>
+        <div class="spec">
+          <div class="spec-row"><span class="spec-key">Microcontrolador</span><span class="spec-val">ATmega32U4</span></div>
+          <div class="spec-row"><span class="spec-key">Velocidad</span><span class="spec-val">16 MHz</span></div>
+          <div class="spec-row"><span class="spec-key">Pines digitales</span><span class="spec-val">20 (7 PWM)</span></div>
+          <div class="spec-row"><span class="spec-key">USB nativo</span><span class="spec-val">Sí</span></div>
+          <div class="spec-row"><span class="spec-key">Tamaño</span><span class="spec-val">18 × 48 mm</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="board-badge bb-esp">WiFi / IoT</span>
+        <div class="card-icon" style="background:rgba(255,212,59,0.08)">🟡</div>
+        <h3>Arduino MKR WiFi 1010</h3>
+        <p>Placa con conectividad WiFi y Bluetooth integrada. Diseñada para proyectos IoT con bajo consumo energético.</p>
+        <div class="spec">
+          <div class="spec-row"><span class="spec-key">MCU</span><span class="spec-val">SAMD21 + u-blox</span></div>
+          <div class="spec-row"><span class="spec-key">Velocidad</span><span class="spec-val">48 MHz</span></div>
+          <div class="spec-row"><span class="spec-key">WiFi</span><span class="spec-val">802.11 b/g/n</span></div>
+          <div class="spec-row"><span class="spec-key">Bluetooth</span><span class="spec-val">4.2 / BLE</span></div>
+          <div class="spec-row"><span class="spec-key">Voltaje</span><span class="spec-val">3.3V</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="board-badge bb-nano">Pro / Edge</span>
+        <div class="card-icon" style="background:rgba(0,212,255,0.08)">⚡</div>
+        <h3>Arduino Portenta H7</h3>
+        <p>La placa más potente de Arduino. Dual-core con capacidades de machine learning y visión artificial para aplicaciones industriales.</p>
+        <div class="spec">
+          <div class="spec-row"><span class="spec-key">MCU</span><span class="spec-val">STM32H747</span></div>
+          <div class="spec-row"><span class="spec-key">Velocidad</span><span class="spec-val">480 MHz</span></div>
+          <div class="spec-row"><span class="spec-key">RAM</span><span class="spec-val">8 MB</span></div>
+          <div class="spec-row"><span class="spec-key">Flash</span><span class="spec-val">16 MB</span></div>
+          <div class="spec-row"><span class="spec-key">WiFi / BT</span><span class="spec-val">Sí / Sí</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SECCIÓN 3: SENSORES -->
+  <div class="section">
+    <div class="section-header">
+      <span class="sec-num">03</span>
+      <h2>Sensores Compatibles</h2>
+      <div class="sec-line"></div>
+    </div>
+    <p class="lead">Los sensores permiten que Arduino perciba el mundo físico, convirtiendo magnitudes físicas en señales eléctricas que la placa puede procesar.</p>
+
+    <div class="sensor-grid">
+      <div class="sensor-pill">
+        <span class="sensor-icon">🌡️</span>
+        <div class="sensor-info">
+          <h4>DHT11 / DHT22</h4>
+          <p>Temperatura y humedad relativa. El DHT22 ofrece mayor precisión y rango.</p>
+        </div>
+      </div>
+      <div class="sensor-pill">
+        <span class="sensor-icon">🔊</span>
+        <div class="sensor-info">
+          <h4>HC-SR04</h4>
+          <p>Sensor ultrasónico de distancia. Rango de 2 cm a 400 cm con buena precisión.</p>
+        </div>
+      </div>
+      <div class="sensor-pill">
+        <span class="sensor-icon">☀️</span>
+        <div class="sensor-info">
+          <h4>LDR (Fotorresistencia)</h4>
+          <p>Detecta la intensidad de luz. Cambia su resistencia según la iluminación.</p>
+        </div>
+      </div>
+      <div class="sensor-pill">
+        <span class="sensor-icon">🧲</span>
+        <div class="sensor-info">
+          <h4>PIR HC-SR501</h4>
+          <p>Detector de movimiento infrarrojo pasivo. Detecta presencia humana.</p>
+        </div>
+      </div>
+      <div class="sensor-pill">
+        <span class="sensor-icon">🔥</span>
+        <div class="sensor-info">
+          <h4>MQ-2 / MQ-7</h4>
+          <p>Detecta gases inflamables, humo y monóxido de carbono en el ambiente.</p>
+        </div>
+      </div>
+      <div class="sensor-pill">
+        <span class="sensor-icon">💧</span>
+        <div class="sensor-info">
+          <h4>Sensor de Lluvia</h4>
+          <p>Detecta la presencia e intensidad de agua o humedad en su superficie.</p>
+        </div>
+      </div>
+      <div class="sensor-pill">
+        <span class="sensor-icon">🌊</span>
+        <div class="sensor-info">
+          <h4>Sensor de Agua</h4>
+          <p>Mide el nivel de agua en depósitos. Versiones analógicas y digitales.</p>
+        </div>
+      </div>
+      <div class="sensor-pill">
+        <span class="sensor-icon">📻</span>
+        <div class="sensor-info">
+          <h4>RFID RC522</h4>
+          <p>Lector de tarjetas y llaveros RFID a 13.56 MHz. Ideal para control de acceso.</p>
+        </div>
+      </div>
+      <div class="sensor-pill">
+        <span class="sensor-icon">🌍</span>
+        <div class="sensor-info">
+          <h4>GPS NEO-6M</h4>
+          <p>Módulo GPS que proporciona coordenadas de ubicación con alta precisión.</p>
+        </div>
+      </div>
+      <div class="sensor-pill">
+        <span class="sensor-icon">🎛️</span>
+        <div class="sensor-info">
+          <h4>MPU-6050</h4>
+          <p>Acelerómetro y giroscopio de 6 ejes. Detecta orientación y movimiento 3D.</p>
+        </div>
+      </div>
+      <div class="sensor-pill">
+        <span class="sensor-icon">❤️</span>
+        <div class="sensor-info">
+          <h4>MAX30100 / 30102</h4>
+          <p>Sensor de frecuencia cardíaca y oximetría de pulso (SpO2).</p>
+        </div>
+      </div>
+      <div class="sensor-pill">
+        <span class="sensor-icon">🔎</span>
+        <div class="sensor-info">
+          <h4>Color TCS34725</h4>
+          <p>Detecta el color de objetos con luz RGB. Alta sensibilidad y precisión.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN 4: HARDWARE COMPATIBLE -->
+  <div class="section">
+    <div class="section-header">
+      <span class="sec-num">04</span>
+      <h2>Hardware Compatible</h2>
+      <div class="sec-line"></div>
+    </div>
+    <p class="lead">Arduino es compatible con una enorme variedad de módulos y componentes electrónicos, conocidos como <em>shields</em> y módulos, que expanden sus capacidades.</p>
+
+    <div class="card" style="overflow-x:auto; padding: 0;">
+      <table class="hw-table">
+        <thead>
+          <tr>
+            <th>Componente</th>
+            <th>Categoría</th>
+            <th>Descripción</th>
+            <th>Conexión</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="hw-name">Pantalla LCD 16×2</td>
+            <td><span class="hw-cat cat-display">Display</span></td>
+            <td>Muestra texto de 16 caracteres en 2 líneas. Con módulo I2C ocupa solo 2 pines.</td>
+            <td>I2C / Paralelo</td>
+          </tr>
+          <tr>
+            <td class="hw-name">OLED 0.96" SSD1306</td>
+            <td><span class="hw-cat cat-display">Display</span></td>
+            <td>Pantalla gráfica de alta resolución (128×64 px). Bajo consumo energético.</td>
+            <td>I2C / SPI</td>
+          </tr>
+          <tr>
+            <td class="hw-name">Módulo HC-05 / HC-06</td>
+            <td><span class="hw-cat cat-comm">Comunicación</span></td>
+            <td>Comunicación Bluetooth Serial. Permite controlar Arduino desde un smartphone.</td>
+            <td>UART (TX/RX)</td>
+          </tr>
+          <tr>
+            <td class="hw-name">Módulo ESP8266 / ESP32</td>
+            <td><span class="hw-cat cat-comm">Comunicación</span></td>
+            <td>Añade conectividad WiFi. El ESP32 también incluye Bluetooth. Muy usado en IoT.</td>
+            <td>UART / SPI</td>
+          </tr>
+          <tr>
+            <td class="hw-name">Driver L298N</td>
+            <td><span class="hw-cat cat-motor">Motor</span></td>
+            <td>Puente H doble para controlar 2 motores DC o 1 motor paso a paso con dirección y velocidad.</td>
+            <td>Digital + PWM</td>
+          </tr>
+          <tr>
+            <td class="hw-name">Servomotor SG90</td>
+            <td><span class="hw-cat cat-motor">Motor</span></td>
+            <td>Servo de pequeño tamaño con rotación de 0° a 180°. Ideal para brazos robóticos.</td>
+            <td>PWM Digital</td>
+          </tr>
+          <tr>
+            <td class="hw-name">Relé 5V (1 / 4 canales)</td>
+            <td><span class="hw-cat cat-power">Potencia</span></td>
+            <td>Permite controlar dispositivos de alta potencia (AC/DC) desde señales de bajo voltaje.</td>
+            <td>Digital</td>
+          </tr>
+          <tr>
+            <td class="hw-name">Módulo SD Card</td>
+            <td><span class="hw-cat cat-storage">Almacenamiento</span></td>
+            <td>Lee y escribe tarjetas microSD. Útil para registrar datos de sensores.</td>
+            <td>SPI</td>
+          </tr>
+          <tr>
+            <td class="hw-name">Teclado Matricial 4×4</td>
+            <td><span class="hw-cat cat-input">Entrada</span></td>
+            <td>16 teclas organizadas en matriz. Para ingresar contraseñas o comandos numéricos.</td>
+            <td>8 pines digitales</td>
+          </tr>
+          <tr>
+            <td class="hw-name">Shield Ethernet W5100</td>
+            <td><span class="hw-cat cat-comm">Comunicación</span></td>
+            <td>Añade conectividad Ethernet cableada. Compatible directamente con el Arduino UNO.</td>
+            <td>SPI (Shield)</td>
+          </tr>
+          <tr>
+            <td class="hw-name">Buzzer Activo / Pasivo</td>
+            <td><span class="hw-cat cat-input">Salida</span></td>
+            <td>Genera sonidos y tonos. El pasivo permite reproducir melodías con señal PWM.</td>
+            <td>Digital / PWM</td>
+          </tr>
+          <tr>
+            <td class="hw-name">Módulo RTC DS3231</td>
+            <td><span class="hw-cat cat-storage">Tiempo real</span></td>
+            <td>Reloj en tiempo real de alta precisión con memoria EEPROM y batería de respaldo.</td>
+            <td>I2C</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  ⚡ Guía de Arduino &nbsp;·&nbsp; Hardware & Electrónica &nbsp;·&nbsp; HTML & CSS
+</footer>
+
+</body>
+</html>
